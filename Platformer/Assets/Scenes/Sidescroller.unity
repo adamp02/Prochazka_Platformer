@@ -1693,11 +1693,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86a1ce42ea3e3dd44868493ae73ec06d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 20
+  maxSpeed: 20
+  timeToReachMaxSpeed: 0.25
+  decelSpeed: 40
+  timeDecel: 0.25
   groundDist: 0.8
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
+  apexHeight: 1500
+  apexTime: 800
+  calculatedGrav: 0
+  terminalSpeed: 20
 --- !u!4 &1433354315
 Transform:
   m_ObjectHideFlags: 0
@@ -1742,9 +1749,9 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDrag: 50
+  m_LinearDrag: 5
   m_AngularDrag: 0.05
-  m_GravityScale: 25
+  m_GravityScale: 3
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
