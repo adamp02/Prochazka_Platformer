@@ -24,6 +24,14 @@ public class PlayerController : MonoBehaviour
 
     public float terminalSpeed = 4f;
 
+    public float coyoteTime = 9f;
+
+
+    // for getting input in update
+    bool pressJump = false;
+
+    bool canJump = true; //for coyotetime
+
     public enum FacingDirection
     {
         left, right
@@ -39,6 +47,22 @@ public class PlayerController : MonoBehaviour
         rb.gravityScale = 0;
     }
 
+    private void Update()
+    {
+        if(IsGrounded())
+        {
+            canJump = true;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space) && canJump)
+        {
+            pressJump = true;
+
+            if (!IsGrounded())
+            { canJump = false; }
+        }
+    }
+
     // Update is called once per frame
     void FixedUpdate()
     {
@@ -47,10 +71,10 @@ public class PlayerController : MonoBehaviour
         Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), 0f);
         MovementUpdate(playerInput);
 
-        if (Input.GetKeyDown(KeyCode.Space) && IsGrounded())
+        if (pressJump)
         {
+            pressJump = false;
             Jump();
-            Debug.Log("TEST");
         }
 
         acceleration = maxSpeed / timeToReachMaxSpeed;
@@ -61,8 +85,8 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
-        Vector2 test = new Vector2(0f, (9 * (apexHeight / apexTime)));
-        rb.AddForce(transform.up * test, ForceMode2D.Impulse);
+        Vector2 jumpHeight = new Vector2(0f, (9 * (apexHeight / apexTime)));
+        rb.AddForce(transform.up * jumpHeight, ForceMode2D.Impulse);
     }
 
 
@@ -74,7 +98,7 @@ public class PlayerController : MonoBehaviour
 
         if (playerInput.x == 0 && rb.velocity.x > 0.1f || rb.velocity.x < 0.1f)
         {
-           // rb.velocity -= Vector2.right * deceleration * Time.deltaTime;
+            // rb.velocity -= Vector2.right * deceleration * Time.deltaTime;
         }
 
         // Draw the groundCheck Raycast
@@ -85,16 +109,19 @@ public class PlayerController : MonoBehaviour
 
         if (!IsGrounded())
         {
-            Debug.Log("Not grounded!");
-            rb.AddForce(-transform.up * calculatedGrav);
+           // Debug.Log("Not grounded!");
             rb.gravityScale = calculatedGrav;
-        } else
+            StartCoroutine(CoyoteTime());
+
+        }
+        else
         {
             rb.gravityScale = 0;
+            canJump = true;
         }
 
         // terminal velocity
-        rb.velocity = Vector2.ClampMagnitude(rb.velocity, terminalSpeed);
+        rb.velocity = new Vector2(rb.velocity.x, Mathf.Clamp(rb.velocity.y, -terminalSpeed, terminalSpeed));
 
     }
 
@@ -125,7 +152,15 @@ public class PlayerController : MonoBehaviour
             return FacingDirection.right;
         }
 
-        // better to get the previous valid direction instead
-        return FacingDirection.left; 
+        // better to get the previous valid direction instead -- USE BOOL
+        return FacingDirection.left;
     }
+
+    IEnumerator CoyoteTime()
+    {
+        yield return new WaitForSeconds(coyoteTime);
+        if (!IsGrounded()) { canJump = false; }
+      //  Debug.Log("TimeEnded!");
+    }
+
 }
