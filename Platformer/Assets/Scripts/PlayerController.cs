@@ -14,7 +14,9 @@ public class PlayerController : MonoBehaviour
     private float acceleration;
     private float deceleration;
     public float groundDist = 2f; // for raycast
+    public float wallDist = 0.2f; // for raycast
     public LayerMask groundLayer;
+    public LayerMask wallLayer;
     Rigidbody2D rb;
 
     public float apexHeight = 1f;
@@ -29,8 +31,10 @@ public class PlayerController : MonoBehaviour
 
     // for getting input in update
     bool pressJump = false;
+    bool pressDash = false;
 
     bool canJump = true; //for coyotetime
+    public GameObject ghostSprite;
 
     public enum FacingDirection
     {
@@ -54,12 +58,23 @@ public class PlayerController : MonoBehaviour
             canJump = true;
         }
 
+        if(IsAtWallLeft() || IsAtWallRight())
+        {
+            canJump = true;
+           
+        }
+
         if (Input.GetKeyDown(KeyCode.Space) && canJump)
         {
             pressJump = true;
 
             if (!IsGrounded())
             { canJump = false; }
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftControl) && IsGrounded())
+        {
+            pressDash = true;
         }
     }
 
@@ -77,6 +92,14 @@ public class PlayerController : MonoBehaviour
             Jump();
         }
 
+        if (pressDash)
+        {
+            pressDash = false;
+            StartCoroutine(ApplyBoost());
+            float dashDirection = playerInput.x;
+            rb.AddForce(transform.right * (dashDirection * 20f), ForceMode2D.Impulse);
+        }
+
         acceleration = maxSpeed / timeToReachMaxSpeed;
         deceleration = decelSpeed / timeDecel;
 
@@ -85,6 +108,18 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
+        if(IsAtWallLeft())
+        {
+            Debug.Log("plase");
+            rb.AddForce(transform.right * 15, ForceMode2D.Impulse);
+        }
+
+        if (IsAtWallRight())
+        {
+            Debug.Log("plase2x");
+            rb.AddForce(-transform.right * 15, ForceMode2D.Impulse);
+        }
+
         Vector2 jumpHeight = new Vector2(0f, (9 * (apexHeight / apexTime)));
         rb.AddForce(transform.up * jumpHeight, ForceMode2D.Impulse);
     }
@@ -105,6 +140,9 @@ public class PlayerController : MonoBehaviour
         // https://docs.unity3d.com/ScriptReference/Debug.DrawRay.html
         Vector3 groundCheck = transform.TransformDirection(-Vector3.up) * groundDist;
         Debug.DrawRay(transform.position, groundCheck, Color.red);
+
+        Vector3 wallCheck = transform.TransformDirection(-Vector3.right) * wallDist;
+        Debug.DrawRay(transform.position, wallCheck, Color.blue);
 
 
         if (!IsGrounded())
@@ -140,6 +178,18 @@ public class PlayerController : MonoBehaviour
         return isGrounded;
     }
 
+    public bool IsAtWallLeft()
+    {
+        bool isAtWall = Physics2D.Raycast(transform.position, -transform.right, wallDist, wallLayer);
+        return isAtWall;
+    }
+
+    public bool IsAtWallRight()
+    {
+        bool isAtWall = Physics2D.Raycast(transform.position, transform.right, wallDist, wallLayer);
+        return isAtWall;
+    }
+
     public FacingDirection GetFacingDirection()
     {
         if (rb.velocity.x < 0.1)
@@ -163,4 +213,18 @@ public class PlayerController : MonoBehaviour
       //  Debug.Log("TimeEnded!");
     }
 
+
+    IEnumerator ApplyBoost()
+    {
+        yield return new WaitForSeconds(0.1f);
+        Instantiate(ghostSprite, transform.position, transform.rotation);
+        yield return new WaitForSeconds(0.1f);
+        Instantiate(ghostSprite, transform.position, transform.rotation);
+        yield return new WaitForSeconds(0.1f);
+        Instantiate(ghostSprite, transform.position, transform.rotation);
+        yield return new WaitForSeconds(0.1f);
+        Instantiate(ghostSprite, transform.position, transform.rotation);
+        yield return new WaitForSeconds(0.35f);
+        // hitboxDEMO.gameObject.SetActive(true);
+    }
 }
