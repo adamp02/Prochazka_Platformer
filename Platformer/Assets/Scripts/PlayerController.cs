@@ -1,9 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
+    // New Mechanics:
+    // [Horizontal] - Side dash (press 'left ctrl' while grounded to dash)
+    // [Vertical] - Wall jumping (jump between the structures on the left side of the map)
+    // [Physics / RB] - Death physics (player dies and flies up when they hit a spike. Press 'R' to restart after dying)
+
 
     public float maxSpeed = 10f;
     public float timeToReachMaxSpeed = 1f;
@@ -86,10 +92,17 @@ public class PlayerController : MonoBehaviour
         {
             isAlive = false;
             DeathFX();
-            Debug.Log("LOL");
+            Debug.Log("Game Over!");
+        }
+
+        if (Input.GetKeyDown("r") && !isAlive)
+        {
+            Scene scene = SceneManager.GetActiveScene(); SceneManager.LoadScene(scene.name);
         }
     }
 
+    // Handles the death physics mechanic
+    // Player's movement is disabled, rb rotation is unfrozen, and they fly upwards
     private void DeathFX()
     {
 
@@ -104,8 +117,6 @@ public class PlayerController : MonoBehaviour
         // Update is called once per frame
         void FixedUpdate()
     {
-        //The input from the player needs to be determined and then passed in the to the MovementUpdate which should
-        //manage the actual movement of the character.
 
 
         if (isAlive)
@@ -123,7 +134,7 @@ public class PlayerController : MonoBehaviour
             if (pressDash)
             {
                 pressDash = false;
-                StartCoroutine(ApplyBoost());
+                StartCoroutine(Dash());
                 float dashDirection = playerInput.x;
                 rb.AddForce(transform.right * (dashDirection * 20f), ForceMode2D.Impulse);
             }
@@ -138,15 +149,17 @@ public class PlayerController : MonoBehaviour
 
     private void Jump()
     {
+        // if the player is jumping off a wall,
+        // make them jump slightly horizontally to reach the adjacent wall
         if(IsAtWallLeft())
         {
-            Debug.Log("plase");
+            Debug.Log("jumping off left wall");
             rb.AddForce(transform.right * 15, ForceMode2D.Impulse);
         }
 
         if (IsAtWallRight())
         {
-            Debug.Log("plase2x");
+            Debug.Log("jumping off right wall");
             rb.AddForce(-transform.right * 15, ForceMode2D.Impulse);
         }
 
@@ -177,7 +190,6 @@ public class PlayerController : MonoBehaviour
 
         if (!IsGrounded())
         {
-           // Debug.Log("Not grounded!");
             rb.gravityScale = calculatedGrav;
             StartCoroutine(CoyoteTime());
 
@@ -238,7 +250,6 @@ public class PlayerController : MonoBehaviour
             return FacingDirection.right;
         }
 
-        // better to get the previous valid direction instead -- USE BOOL
         return FacingDirection.left;
     }
 
@@ -250,7 +261,7 @@ public class PlayerController : MonoBehaviour
     }
 
 
-    IEnumerator ApplyBoost()
+    IEnumerator Dash()
     {
         yield return new WaitForSeconds(0.1f);
         Instantiate(ghostSprite, transform.position, transform.rotation);
@@ -258,9 +269,6 @@ public class PlayerController : MonoBehaviour
         Instantiate(ghostSprite, transform.position, transform.rotation);
         yield return new WaitForSeconds(0.1f);
         Instantiate(ghostSprite, transform.position, transform.rotation);
-        yield return new WaitForSeconds(0.1f);
-        Instantiate(ghostSprite, transform.position, transform.rotation);
         yield return new WaitForSeconds(0.35f);
-        // hitboxDEMO.gameObject.SetActive(true);
     }
 }
