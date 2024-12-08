@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour
     public float wallDist = 0.2f; // for raycast
     public LayerMask groundLayer;
     public LayerMask wallLayer;
+    public LayerMask deathLayer;
     Rigidbody2D rb;
 
     public float apexHeight = 1f;
@@ -33,8 +34,12 @@ public class PlayerController : MonoBehaviour
     bool pressJump = false;
     bool pressDash = false;
 
+    public bool isAlive = true;
+
     bool canJump = true; //for coyotetime
     public GameObject ghostSprite;
+
+    public GameObject gameOverMsg; // for after the player dies
 
     public enum FacingDirection
     {
@@ -76,29 +81,54 @@ public class PlayerController : MonoBehaviour
         {
             pressDash = true;
         }
+
+        if(HitDeathPlane() && isAlive)
+        {
+            isAlive = false;
+            DeathFX();
+            Debug.Log("LOL");
+        }
     }
 
-    // Update is called once per frame
-    void FixedUpdate()
+    private void DeathFX()
+    {
+
+        rb.freezeRotation = false;
+        rb.AddForce(transform.up * 50f, ForceMode2D.Impulse);
+        rb.AddForce(transform.right * 25f, ForceMode2D.Impulse);
+        rb.rotation += 45f;
+        gameOverMsg.SetActive(true);
+
+    }
+
+        // Update is called once per frame
+        void FixedUpdate()
     {
         //The input from the player needs to be determined and then passed in the to the MovementUpdate which should
         //manage the actual movement of the character.
-        Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), 0f);
-        MovementUpdate(playerInput);
 
-        if (pressJump)
+
+        if (isAlive)
         {
-            pressJump = false;
-            Jump();
+
+            Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), 0f);
+            MovementUpdate(playerInput);
+
+            if (pressJump)
+            {
+                pressJump = false;
+                Jump();
+            }
+
+            if (pressDash)
+            {
+                pressDash = false;
+                StartCoroutine(ApplyBoost());
+                float dashDirection = playerInput.x;
+                rb.AddForce(transform.right * (dashDirection * 20f), ForceMode2D.Impulse);
+            }
         }
 
-        if (pressDash)
-        {
-            pressDash = false;
-            StartCoroutine(ApplyBoost());
-            float dashDirection = playerInput.x;
-            rb.AddForce(transform.right * (dashDirection * 20f), ForceMode2D.Impulse);
-        }
 
         acceleration = maxSpeed / timeToReachMaxSpeed;
         deceleration = decelSpeed / timeDecel;
@@ -176,6 +206,12 @@ public class PlayerController : MonoBehaviour
     {
         bool isGrounded = Physics2D.Raycast(transform.position, -transform.up, groundDist, groundLayer);
         return isGrounded;
+    }
+
+    public bool HitDeathPlane()
+    {
+        bool hitDeathPlane = Physics2D.Raycast(transform.position, -transform.up, groundDist, deathLayer);
+        return hitDeathPlane;
     }
 
     public bool IsAtWallLeft()
